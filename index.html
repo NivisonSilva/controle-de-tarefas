@@ -1,0 +1,304 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gerenciador de Tarefas</title>
+    <style>
+        /* Estilização da página */
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #000; /* Plano de fundo preto */
+            color: white;
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+        }
+        .container, .login-container, .register-container {
+            max-width: 400px;
+            width: 100%;
+            background: #333;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.5);
+            display: none; /* Containers não são exibidos inicialmente */
+        }
+        .login-container.active, .register-container.active, .container.active {
+            display: block; /* Exibir container quando ativo */
+        }
+        h1 {
+            text-align: center;
+            color: #fff;
+        }
+        input[type="text"], input[type="password"], input[type="date"], select {
+            width: calc(100% - 22px);
+            padding: 10px;
+            margin-bottom: 10px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            background-color: #444;
+            color: white;
+        }
+        button {
+            width: 100%;
+            padding: 10px;
+            background-color: #007BFF;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        button:hover {
+            background-color: #0056b3;
+        }
+        ul {
+            list-style: none;
+            padding: 0;
+        }
+        li {
+            margin: 5px 0;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        /* Cores diferentes para prioridades */
+        .tarefa-baixa {
+            background-color: #28a745;
+        }
+        .tarefa-média {
+            background-color: #ffc107;
+        }
+        .tarefa-alta {
+            background-color: #dc3545;
+        }
+        .link {
+            display: block;
+            text-align: center;
+            margin-top: 10px;
+            color: #007BFF;
+            cursor: pointer;
+        }
+        .tarefa-info {
+            max-width: 70%;
+        }
+        .editar-btn {
+            background-color: #ffc107;
+            border: none;
+            padding: 5px 10px;
+            border-radius: 4px;
+            cursor: pointer;
+            color: black;
+        }
+        .editar-btn:hover {
+            background-color: #e0a800;
+        }
+    </style>
+</head>
+<body>
+    <!-- Tela de Login -->
+    <div class="login-container active" id="loginContainer">
+        <h1>Login</h1>
+        <input type="text" id="loginEmail" placeholder="E-mail" required> <!-- Campo de e-mail -->
+        <input type="password" id="loginPassword" placeholder="Senha" required>
+        <button onclick="login()">Entrar</button>
+        <div class="link" onclick="showRegister()">Cadastre-se</div>
+    </div>
+
+    <!-- Tela de Cadastro -->
+    <div class="register-container" id="registerContainer">
+        <h1>Cadastro</h1>
+        <input type="text" id="registerEmail" placeholder="E-mail" required> <!-- Campo de e-mail -->
+        <input type="password" id="registerPassword" placeholder="Senha" required>
+        <button onclick="register()">Cadastrar</button>
+        <div class="link" onclick="showLogin()">Já tem uma conta? Faça login</div>
+    </div>
+
+    <!-- Gerenciador de Tarefas -->
+    <div class="container" id="taskContainer">
+        <h1>Gerenciador de Tarefas</h1>
+        <input type="text" id="descricao" placeholder="Descrição da tarefa" required>
+        <select id="prioridade">
+            <option value="baixa">Baixa</option>
+            <option value="média">Média</option>
+            <option value="alta">Alta</option>
+        </select>
+        <input type="date" id="data_vencimento" required>
+        <input type="text" id="categoria" placeholder="Categoria da tarefa" required>
+        <button onclick="adicionarTarefa()">Adicionar Tarefa</button>
+        <button onclick="logout()">Sair</button> <!-- Botão de sair -->
+        <h2>Lista de Tarefas</h2>
+        <ul id="listaTarefas"></ul>
+    </div>
+
+    <script>
+        let currentUser = null; // Variável para armazenar o usuário logado
+        let tarefas = []; // Lista de tarefas do usuário logado
+
+        // Mostra a tela de login e esconde a de cadastro
+        function showLogin() {
+            document.getElementById('registerContainer').classList.remove('active');
+            document.getElementById('loginContainer').classList.add('active');
+        }
+
+        // Mostra a tela de cadastro e esconde a de login
+        function showRegister() {
+            document.getElementById('loginContainer').classList.remove('active');
+            document.getElementById('registerContainer').classList.add('active');
+        }
+
+        // Função para cadastrar um novo usuário
+        function register() {
+            const email = document.getElementById('registerEmail').value.trim(); // Captura o e-mail
+            const password = document.getElementById('registerPassword').value.trim(); // Captura a senha
+
+            // Valida se o e-mail e senha foram preenchidos
+            if (email && password) {
+                let users = JSON.parse(localStorage.getItem('users')) || []; // Recupera os usuários cadastrados do localStorage
+
+                // Verifica se o e-mail já está cadastrado
+                if (users.some(user => user.email === email)) {
+                    alert('E-mail já cadastrado!');
+                } else {
+                    users.push({ email, password }); // Adiciona o novo usuário
+                    localStorage.setItem('users', JSON.stringify(users)); // Salva no localStorage
+                    alert('Cadastro realizado com sucesso!');
+                    showLogin(); // Redireciona para a tela de login
+                }
+            } else {
+                alert('Por favor, preencha todos os campos obrigatórios.');
+            }
+        }
+
+        // Função para login do usuário
+        function login() {
+            const email = document.getElementById('loginEmail').value.trim(); // Captura o e-mail
+            const password = document.getElementById('loginPassword').value.trim(); // Captura a senha
+
+            // Valida se o e-mail e senha foram preenchidos
+            if (email && password) {
+                let users = JSON.parse(localStorage.getItem('users')) || []; // Recupera os usuários cadastrados do localStorage
+
+                // Verifica se o e-mail e senha estão corretos
+                if (users.some(user => user.email === email && user.password === password)) {
+                    currentUser = email; // Armazena o usuário logado
+                    document.getElementById('loginContainer').classList.remove('active');
+                    document.getElementById('taskContainer').classList.add('active');
+                    listarTarefas(); // Exibe as tarefas do usuário
+                } else {
+                    alert('E-mail ou senha incorretos!');
+                }
+            } else {
+                alert('Por favor, preencha todos os campos obrigatórios.');
+            }
+        }
+
+        // Salva as tarefas do usuário logado no localStorage
+        function salvarTarefas() {
+            let allTasks = JSON.parse(localStorage.getItem('tarefas')) || {}; // Recupera todas as tarefas
+            allTasks[currentUser] = tarefas; // Armazena as tarefas do usuário atual
+            localStorage.setItem('tarefas', JSON.stringify(allTasks)); // Salva no localStorage
+        }
+
+        // Carrega as tarefas do usuário logado do localStorage
+        function carregarTarefas() {
+            let allTasks = JSON.parse(localStorage.getItem('tarefas')) || {}; // Recupera todas as tarefas
+            tarefas = allTasks[currentUser] || []; // Carrega as tarefas do usuário atual
+        }
+
+        // Adiciona uma nova tarefa para o usuário logado
+        function adicionarTarefa() {
+            const descricao = document.getElementById('descricao').value.trim(); // Captura a descrição
+            const prioridade = document.getElementById('prioridade').value; // Captura a prioridade
+            const dataVencimento = document.getElementById('data_vencimento').value; // Captura a data de vencimento
+            const categoria = document.getElementById('categoria').value.trim(); // Captura a categoria
+
+            // Valida se todos os campos foram preenchidos
+            if (descricao && prioridade && dataVencimento && categoria) {
+                tarefas.push({ descricao, prioridade, dataVencimento, categoria }); // Adiciona a nova tarefa
+                salvarTarefas(); // Salva as tarefas no localStorage
+                listarTarefas(); // Atualiza a lista de tarefas
+                document.getElementById('descricao').value = ''; // Limpa o campo de descrição
+                document.getElementById('data_vencimento').value = ''; // Limpa o campo de data de vencimento
+                document.getElementById('categoria').value = ''; // Limpa o campo de categoria
+            } else {
+                alert("Por favor, preencha todos os campos obrigatórios.");
+            }
+        }
+
+        // Exibe a lista de tarefas na interface
+        function listarTarefas() {
+            carregarTarefas(); // Carrega as tarefas do localStorage
+            const lista = document.getElementById('listaTarefas');
+            lista.innerHTML = ''; // Limpa a lista
+
+            tarefas.forEach((tarefa, index) => {
+                const li = document.createElement('li');
+                li.classList.add(`tarefa-${tarefa.prioridade}`); // Adiciona a classe com base na prioridade
+                li.innerHTML = `
+                    <span class="tarefa-info">${tarefa.descricao} - Data: ${tarefa.dataVencimento} - Categoria: ${tarefa.categoria}</span>
+                    <button class="editar-btn" onclick="editarTarefa(${index})">Editar</button>
+                    <button onclick="removerTarefa(${index})">Remover</button>
+                `;
+                lista.appendChild(li); // Adiciona o item à lista
+            });
+        }
+
+        // Remove uma tarefa da lista
+        function removerTarefa(index) {
+            tarefas.splice(index, 1); // Remove a tarefa do array
+            salvarTarefas(); // Salva as tarefas atualizadas
+            listarTarefas(); // Atualiza a lista de tarefas
+        }
+
+        // Permite editar uma tarefa existente
+        function editarTarefa(index) {
+            const tarefa = tarefas[index]; // Captura a tarefa a ser editada
+            document.getElementById('descricao').value = tarefa.descricao; // Preenche os campos com os dados da tarefa
+            document.getElementById('prioridade').value = tarefa.prioridade;
+            document.getElementById('data_vencimento').value = tarefa.dataVencimento;
+            document.getElementById('categoria').value = tarefa.categoria;
+
+            // Adiciona um botão para salvar as alterações
+            const saveButton = document.createElement('button');
+            saveButton.textContent = 'Salvar Alterações';
+            saveButton.onclick = () => {
+                const descricao = document.getElementById('descricao').value.trim();
+                const prioridade = document.getElementById('prioridade').value;
+                const dataVencimento = document.getElementById('data_vencimento').value;
+                const categoria = document.getElementById('categoria').value.trim();
+
+                // Valida se todos os campos foram preenchidos
+                if (descricao && prioridade && dataVencimento && categoria) {
+                    tarefas[index] = { descricao, prioridade, dataVencimento, categoria }; // Atualiza a tarefa
+                    salvarTarefas(); // Salva as tarefas atualizadas
+                    listarTarefas(); // Atualiza a lista de tarefas
+                    document.getElementById('descricao').value = ''; // Limpa o campo de descrição
+                    document.getElementById('data_vencimento').value = ''; // Limpa o campo de data de vencimento
+                    document.getElementById('categoria').value = ''; // Limpa o campo de categoria
+                    saveButton.remove(); // Remove o botão de salvar
+                } else {
+                    alert("Por favor, preencha todos os campos obrigatórios.");
+                }
+            };
+
+            // Adiciona o botão de salvar à página e esconde o botão de adicionar tarefa
+            document.querySelector('.container').appendChild(saveButton);
+            document.querySelector('button[onclick="adicionarTarefa()"]').style.display = 'none';
+        }
+
+        // Função para sair da conta atual
+        function logout() {
+            currentUser = null; // Limpa o usuário atual
+            tarefas = []; // Limpa a lista de tarefas
+            document.getElementById('taskContainer').classList.remove('active'); // Esconde a tela de tarefas
+            showLogin(); // Volta para a tela de login
+        }
+    </script>
+</body>
+</html>

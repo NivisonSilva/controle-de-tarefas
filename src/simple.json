@@ -1,0 +1,38 @@
+[
+{
+  "idade": 30,
+  "peso": 75.6,
+  "nome": "Joao Lucas",
+  "maiorDeIdade": true,
+  "cartaoDeCredito": null,
+  "streamings": [
+    "netflix",
+    "amazonPrimeVideo",
+    "disneyPlus"
+  ],
+  "endereco": {
+    "logradouro": "Rua Bione",
+    "numero": 220,
+    "complemento": null,
+    "bairro": "Bairro do Recife"
+  }
+},
+{
+    "idade": 30,
+    "peso": 75.6,
+    "nome": "Joao Lucas",
+    "maiorDeIdade": true,
+    "cartaoDeCredito": null,
+    "streamings": [
+      "netflix",
+      "amazonPrimeVideo",
+      "disneyPlus"
+    ],
+    "endereco": {
+      "logradouro": "Rua Bione",
+      "numero": 220,
+      "complemento": null,
+      "bairro": "Bairro do Recife"
+    }
+  }
+]
